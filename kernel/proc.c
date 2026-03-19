@@ -688,3 +688,13 @@ procdump(void)
     printf("\n");
   }
 }
+
+//Changes the process priority
+void
+prioritize(int priority)
+{
+  struct proc *p = myproc();
+  acquire(&p->lock);
+  p->priority = priority;
+  release(&p->lock);
+}

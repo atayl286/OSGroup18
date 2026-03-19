@@ -107,3 +107,13 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_prioritize(void)
+{
+  int priority;
+  argint(0, &priority);
+
+  prioritize(priority);
+  return 0;
+}
