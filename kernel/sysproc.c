@@ -117,3 +117,12 @@ sys_prioritize(void)
   prioritize(priority);
   return 0;
 }
+
+uint64
+sys_priofork(void)
+{
+  int priority;
+  argint(0, &priority);
+
+  return priofork(priority);
+}

@@ -438,26 +438,46 @@ scheduler(void)
     intr_off();
 
     int found = 0;
+    struct proc *highestPrioProc;
+    int highestPrio = -1;
+    
+    //Collect all processes to check priority
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
-      if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
+      //Check priority only for runnable processes to avoid infinite waits
+      if(p->state == RUNNABLE && p->priority > highestPrio)
+      {
+        highestPrioProc = p;
+        highestPrio = p->priority;
         found = 1;
       }
       release(&p->lock);
     }
+
     if(found == 0) {
       // nothing to run; stop running on this core until an interrupt.
       asm volatile("wfi");
+    }
+    else
+    {
+      //Run most important process
+      acquire(&highestPrioProc->lock);
+
+      //Check again for runnability to avoid panics
+      if(highestPrioProc->state == RUNNABLE)
+      {
+        // Switch to chosen process.  It is the process's job
+        // to release its lock and then reacquire it
+        // before jumping back to us.
+        highestPrioProc->state = RUNNING;
+        c->proc = highestPrioProc;
+        swtch(&c->context, &highestPrioProc->context);
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+      }
+      release(&highestPrioProc->lock);
     }
   }
 }
@@ -696,5 +716,57 @@ prioritize(int priority)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->priority = priority;
+
   release(&p->lock);
+}
+
+//Forks with priority (THE SAME AS FORK BUT INSERTS A PRIORITY CHANGE)
+int
+priofork(int priority)
+{
+  int i, pid;
+  struct proc *np;
+  struct proc *p = myproc();
+
+  // Allocate process.
+  if((np = allocproc()) == 0){
+    return -1;
+  }
+
+  // Copy user memory from parent to child.
+  if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
+    freeproc(np);
+    release(&np->lock);
+    return -1;
+  }
+  np->sz = p->sz;
+
+  // copy saved user registers.
+  *(np->trapframe) = *(p->trapframe);
+
+  // Cause fork to return 0 in the child.
+  np->trapframe->a0 = 0;
+
+  // increment reference counts on open file descriptors.
+  for(i = 0; i < NOFILE; i++)
+    if(p->ofile[i])
+      np->ofile[i] = filedup(p->ofile[i]);
+  np->cwd = idup(p->cwd);
+
+  safestrcpy(np->name, p->name, sizeof(p->name));
+
+  pid = np->pid;
+
+  release(&np->lock);
+
+  acquire(&wait_lock);
+  np->parent = p;
+  release(&wait_lock);
+
+  acquire(&np->lock);
+  np->priority = priority;
+  np->state = RUNNABLE;
+  release(&np->lock);
+
+  return pid;
 }
