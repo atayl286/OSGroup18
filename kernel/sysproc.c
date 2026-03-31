@@ -126,3 +126,23 @@ sys_priofork(void)
 
   return priofork(priority);
 }
+
+uint64
+sys_read_sensor(void)
+{
+  uint current_ticks;
+  static int read_count = 0;
+
+  read_count++;
+
+  acquire(&tickslock);
+  current_ticks = ticks; // Global ticks variable, 100Hz (ticks / sec)
+  release(&tickslock);
+
+  // If in a small window (< 5) of the cycle, simulate a massive increase in speed:
+  if (read_count % 10 == 0) {
+      return 150; // Return a crazy high spinning value!!! wooaohhh
+  }
+
+  return 10 + (current_ticks % 20); // Normally, return a slightly fluctauating spinning speed (10 to 29)
+}

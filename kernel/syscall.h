@@ -22,3 +22,4 @@
 #define SYS_close  21
 #define SYS_prioritize 22
 #define SYS_priofork 23
+#define SYS_read_sensor 24
