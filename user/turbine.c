@@ -6,10 +6,12 @@
 #define CRITICAL_THRESHOLD 100 // Threshold for the alarm trigger (spike in read_sensor is 150)
 
 // Critical processes that must happen immediately:
-void emergency_shutdown(void) {
+void emergency_shutdown(int rpm) {
     printf("\n!!! CRITICAL ALARM !!!\n");
     printf("Turbine speed at catastrophic levels!\n");
     printf("Deploying emergency brakes...\n");
+
+    write_log(rpm, LOG_EVENT_SHUTDOWN);
 
     // Simulating a lot of CPU work:
     int i, j, k = 0;
@@ -30,9 +32,11 @@ int main(void) {
         int speed = read_sensor();
         
         if (speed < CRITICAL_THRESHOLD) { // Under threshold (normal behaviour)
+            write_log(speed, LOG_EVENT_NORMAL);
             printf("Turbine speed normal: %d rpm\n", speed);
             pause(50); // Sleep 50 ticks
         } else { // Over threshold (bad!)
+            write_log(speed, LOG_EVENT_SPIKE);
             printf("\n--- SENSOR SPIKE DETECTED: %d rpm ---\n", speed);
             int pid = priofork(MAX_PRIORITY); // Emergency handler
             
@@ -44,7 +48,7 @@ int main(void) {
             
             // High-priority alarm child:
             else if (pid == 0) {
-                emergency_shutdown();
+                emergency_shutdown(speed);
             } 
             
             // Standard-priority parent:
