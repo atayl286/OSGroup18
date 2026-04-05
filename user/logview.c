@@ -23,7 +23,7 @@ int main(void) {
   }
 
   if (!log.log_count) {
-    printf("No log entries.");
+    printf("No log entries.\n");
     exit(0);
   }
 
