@@ -24,3 +24,4 @@
 #define SYS_priofork 23
 #define SYS_read_sensor 24
 #define SYS_write_log 25
+#define SYS_get_log 26

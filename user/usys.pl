@@ -45,3 +45,5 @@ entry("uptime");
 entry("prioritize");
 entry("priofork");
 entry("read_sensor");
+entry("write_log");
+entry("get_log");

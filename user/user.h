@@ -12,6 +12,12 @@ struct log_entry {
   int event;
 };
 
+struct turbine_log {
+  int log_head;
+  int log_count;
+  struct log_entry log_buf[LOG_SIZE];
+};
+
 struct stat;
 
 // system calls
@@ -40,6 +46,7 @@ void prioritize(int);
 int priofork(int);
 int read_sensor(void);
 int write_log(int rpm, int event_type);
+int get_log(struct turbine_log*);
 
 // ulib.c
 int stat(const char*, struct stat*);

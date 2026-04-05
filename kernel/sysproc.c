@@ -197,3 +197,14 @@ uint64 sys_write_log(void) {
 
   return 0;
 }
+
+uint64 sys_get_log(void) {
+  uint64 uaddr;
+  argaddr(0, &uaddr);
+
+  // copy the log struct to userspace
+  if (copyout(myproc()->pagetable, uaddr, (char*)&log, sizeof(log)) < 0) {
+    return -1;
+  }
+  return 0;
+}
