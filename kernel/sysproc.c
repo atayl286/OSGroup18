@@ -146,3 +146,54 @@ sys_read_sensor(void)
 
   return 10 + (current_ticks % 20); // Normally, return a slightly fluctauating spinning speed (10 to 29)
 }
+
+#define LOG_SIZE 256
+#define LOG_EVENT_NORMAL 0
+#define LOG_EVENT_SPIKE 1
+#define LOG_EVENT_SHUTDOWN 2
+
+struct log_entry {
+  uint timestamp;
+  int rpm;
+  int event;
+};
+
+struct turbine_log {
+  int log_head;
+  int log_count;
+  struct log_entry log_buf[LOG_SIZE];
+  
+};
+
+static struct spinlock log_lock;
+static struct turbine_log log;
+
+uint64 sys_write_log(void) {
+  int rpm;
+  int event;
+  uint current_ticks;
+
+  // get the rpm and event from the syscall
+  argint(0, &rpm);
+  argint(1, &event);
+
+  // get the tick count
+  acquire(&tickslock);
+  current_ticks = ticks;
+  release(&tickslock);
+
+  // add the log entry to the log buffer
+  acquire(&log_lock);
+  log.log_buf[log.log_head].timestamp = current_ticks;
+  log.log_buf[log.log_head].rpm = rpm;
+  log.log_buf[log.log_head].event = event;
+  // treat the log buffer as a circular buffer
+  log.log_head = (log.log_head + 1) % LOG_SIZE;
+  // if the circular is not full, we are safe to increment the log count
+  if (log.log_count < LOG_SIZE) {
+    log.log_count++;
+  }
+  release(&log_lock);
+
+  return 0;
+}
