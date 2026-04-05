@@ -25,7 +25,12 @@ void emergency_shutdown(int rpm) {
     exit(0);
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    // optional arg, determines how many SHUTDOWN events happen before stopping the program
+    int loops = -1;
+    if (argc >= 2) {
+        loops = atoi(argv[1]);
+    }
     printf("Starting turbine monitor...\n");
 
     while(1) {
@@ -54,6 +59,16 @@ int main(void) {
             // Standard-priority parent:
             else {
                 wait(0); // Wait for emergency handling child to finish
+
+                // -1 means infinite looping, so dont change loops
+                if (loops != -1) {
+                    loops--;
+                    // break out of the loop if the loop count is reached
+                    if (loops <= 0) {
+                        break;
+                    }
+                }
+
                 printf("Monitor resuming normal operations...\n\n");
             }
         }
