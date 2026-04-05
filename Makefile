@@ -147,6 +147,7 @@ UPROGS=\
 	$U/_dorphan\
 	$U/_prioTest\
 	$U/_turbine\
+	$U/_logview\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
