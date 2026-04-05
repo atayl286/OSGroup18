@@ -1,5 +1,23 @@
 #define SBRK_ERROR ((char *)-1)
 
+#define LOG_EVENT_NORMAL 0
+#define LOG_EVENT_SPIKE 1
+#define LOG_EVENT_SHUTDOWN 2
+
+#define LOG_SIZE 256
+
+struct log_entry {
+  unsigned int timestamp;
+  int rpm;
+  int event;
+};
+
+struct turbine_log {
+  int log_head;
+  int log_count;
+  struct log_entry log_buf[LOG_SIZE];
+};
+
 struct stat;
 
 // system calls
@@ -27,6 +45,8 @@ int uptime(void);
 void prioritize(int);
 int priofork(int);
 int read_sensor(void);
+int write_log(int rpm, int event_type);
+int get_log(struct turbine_log*);
 
 // ulib.c
 int stat(const char*, struct stat*);

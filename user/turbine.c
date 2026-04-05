@@ -6,10 +6,12 @@
 #define CRITICAL_THRESHOLD 100 // Threshold for the alarm trigger (spike in read_sensor is 150)
 
 // Critical processes that must happen immediately:
-void emergency_shutdown(void) {
+void emergency_shutdown(int rpm) {
     printf("\n!!! CRITICAL ALARM !!!\n");
     printf("Turbine speed at catastrophic levels!\n");
     printf("Deploying emergency brakes...\n");
+
+    write_log(rpm, LOG_EVENT_SHUTDOWN);
 
     // Simulating a lot of CPU work:
     int i, j, k = 0;
@@ -23,16 +25,23 @@ void emergency_shutdown(void) {
     exit(0);
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    // optional arg, determines how many SHUTDOWN events happen before stopping the program
+    int loops = -1;
+    if (argc >= 2) {
+        loops = atoi(argv[1]);
+    }
     printf("Starting turbine monitor...\n");
 
     while(1) {
         int speed = read_sensor();
         
         if (speed < CRITICAL_THRESHOLD) { // Under threshold (normal behaviour)
+            write_log(speed, LOG_EVENT_NORMAL);
             printf("Turbine speed normal: %d rpm\n", speed);
             pause(50); // Sleep 50 ticks
         } else { // Over threshold (bad!)
+            write_log(speed, LOG_EVENT_SPIKE);
             printf("\n--- SENSOR SPIKE DETECTED: %d rpm ---\n", speed);
             int pid = priofork(MAX_PRIORITY); // Emergency handler
             
@@ -44,12 +53,22 @@ int main(void) {
             
             // High-priority alarm child:
             else if (pid == 0) {
-                emergency_shutdown();
+                emergency_shutdown(speed);
             } 
             
             // Standard-priority parent:
             else {
                 wait(0); // Wait for emergency handling child to finish
+
+                // -1 means infinite looping, so dont change loops
+                if (loops != -1) {
+                    loops--;
+                    // break out of the loop if the loop count is reached
+                    if (loops <= 0) {
+                        break;
+                    }
+                }
+
                 printf("Monitor resuming normal operations...\n\n");
             }
         }
