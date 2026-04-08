@@ -106,6 +106,8 @@ extern uint64 sys_priofork(void);
 extern uint64 sys_read_sensor(void);
 extern uint64 sys_write_log(void);
 extern uint64 sys_get_log(void);
+extern uint64 sys_send_yaw(void);
+extern uint64 sys_read_yaw(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -136,6 +138,8 @@ static uint64 (*syscalls[])(void) = {
 [SYS_read_sensor]   sys_read_sensor,
 [SYS_write_log] sys_write_log,
 [SYS_get_log] sys_get_log,
+[SYS_send_yaw] sys_send_yaw,
+[SYS_read_yaw] sys_read_yaw,
 };
 
 void

@@ -208,3 +208,58 @@ uint64 sys_get_log(void) {
   }
   return 0;
 }
+
+#define YAW_CMD_LEN 32
+#define YAW_BUF_SIZE 10
+
+struct yaw_queue {
+  char buf[YAW_BUF_SIZE][YAW_CMD_LEN];
+  int head;
+  int tail;
+  int count;
+};
+
+static struct spinlock yaw_lock;
+static struct yaw_queue yaw_q;
+
+uint64 sys_send_yaw(void) {
+  char buf[YAW_CMD_LEN];
+  if (argstr(0, buf, YAW_CMD_LEN) < 0)
+    return -1;
+
+  acquire(&yaw_lock);
+  while(yaw_q.count == YAW_BUF_SIZE) {
+    sleep(&yaw_q.count, &yaw_lock);
+  }
+
+  safestrcpy(yaw_q.buf[yaw_q.tail], buf, YAW_CMD_LEN);
+  yaw_q.tail = (yaw_q.tail + 1) % YAW_BUF_SIZE;
+  yaw_q.count++;
+
+  wakeup(&yaw_q.buf);
+  release(&yaw_lock);
+  return 0;
+}
+
+uint64 sys_read_yaw(void) {
+  uint64 uaddr;
+  argaddr(0, &uaddr);
+
+  acquire(&yaw_lock);
+  while(yaw_q.count == 0) {
+    sleep(&yaw_q.buf, &yaw_lock);
+  }
+
+  char buf[YAW_CMD_LEN];
+  safestrcpy(buf, yaw_q.buf[yaw_q.head], YAW_CMD_LEN);
+  yaw_q.head = (yaw_q.head + 1) % YAW_BUF_SIZE;
+  yaw_q.count--;
+
+  wakeup(&yaw_q.count);
+  release(&yaw_lock);
+
+  if (copyout(myproc()->pagetable, uaddr, buf, YAW_CMD_LEN) < 0)
+    return -1;
+
+  return 0;
+}
