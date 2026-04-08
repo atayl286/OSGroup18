@@ -47,3 +47,5 @@ entry("priofork");
 entry("read_sensor");
 entry("write_log");
 entry("get_log");
+entry("send_yaw");
+entry("read_yaw");

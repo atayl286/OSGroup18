@@ -47,6 +47,8 @@ int priofork(int);
 int read_sensor(void);
 int write_log(int rpm, int event_type);
 int get_log(struct turbine_log*);
+int send_yaw(char*);
+int read_yaw(char*);
 
 // ulib.c
 int stat(const char*, struct stat*);

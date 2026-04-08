@@ -25,3 +25,5 @@
 #define SYS_read_sensor 24
 #define SYS_write_log 25
 #define SYS_get_log 26
+#define SYS_send_yaw 27
+#define SYS_read_yaw 28

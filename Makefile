@@ -148,6 +148,7 @@ UPROGS=\
 	$U/_prioTest\
 	$U/_turbine\
 	$U/_logview\
+	$U/_yawsys\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
